@@ -4,12 +4,9 @@ import argparse
 
 import subprocess
 import json
-# Parse each line of traceroute text into a dictionary output which records
-# network hop statistics including min, med, avg and max latencies for each hop
-def parse_text(line):
-    ms_split = line.split(' ms')
+def parse_latencies(ms_arr):
     latency = []
-    for connection in ms_split:
+    for connection in ms_arr:
         split_connection = connection.split(" ")
         try: 
             latency.append(float(split_connection[-1]))
@@ -17,10 +14,27 @@ def parse_text(line):
             pass
     if len(latency) < 1:
         return None
-    space_split = line.split()
-    hop_dict = {'hop' : space_split[0]}
+    return latency
+# Parse each line of traceroute text into a dictionary output which records
+# network hop statistics including min, med, avg and max latencies for each hop
+def parse_text(runs_arr):
+    # 2d array to hold all latency values of each hop from each run
+    hop_arr = {} 
+    for run in runs_arr:
+        for hop in run:
+            ms_split = hop.split(' ms')
+            hop_split = hop.split()
+            print("Hop line: " + hop)
+            hop_latencies = parse_latencies(ms_split)
+            hop_number = hop_split[0]
+            print("Hop: " + hop_number)
+            print(hop_latencies)
+
+    
+    # space_split = line.split()
+    # hop_dict = {'hop' : space_split[0]}
     # latency.sort()
-    return hop_dict
+    # return hop_dict
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', metavar='TARGET', type = str, nargs = 1, help = "A target domain name or IP address")
@@ -44,25 +58,40 @@ if args.test is not None:
             if os.path.isfile(file_path):
                 with open(file_path, "r") as file_x:
                     #parse data function here
+
                     print(file_x.read())
     else:
         for i in range(args.n[0]):
             print("Directory called: " + args.test[0])
 
 #Optional NUM_RUNS call
-elif args.n is not None:
-    for i in range(args.n[0]):
-        code = subprocess.run(["traceroute", args.t[0]], capture_output=True, text = True)
-        print(code.stdout)
 else:
-    code = subprocess.run(["traceroute", args.t[0]], capture_output=True, text = True)
-    output_arr = code.stdout.split('\n')
-    del output_arr[0]
-    for line in output_arr:
-        parsed = parse_text(line)
-        if parsed is not None:
-            final_dictionary.append(parsed)
-    print(final_dictionary)
+    num_runs = 1
+    if args.n is not None: 
+        num_runs = args.n[0]
+    runs_arr = []
+    for i in range(num_runs):
+        code = subprocess.run(["traceroute", args.t[0]], capture_output=True, text = True)
+        output_arr = code.stdout.split('\n')
+        del output_arr[0]
+        del output_arr[-1]
+        runs_arr.append(output_arr)
+    parse_text(runs_arr)
+    with open(args.o[0], "w") as outfile:
+        outfile.write(json.dumps(runs_arr, indent=2))
+# else:
+#     code = subprocess.run(["traceroute", args.t[0]], capture_output=True, text = True)
+#     output_arr = code.stdout.split('\n')
+#     del output_arr[0]
+#     for line in output_arr:
+#         parsed = parse_text(line)
+#         if parsed is not None:
+#             final_dictionary.append(parsed)
+
+#     with open(args.o[0], "w") as outfile:
+#         outfile.write(json.dumps(final_dictionary, indent=2))
+
+#     print(final_dictionary)
 
 
 
