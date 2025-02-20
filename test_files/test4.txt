@@ -1,0 +1,12 @@
+traceroute to www.google.com (172.217.1.100), 30 hops max, 60 byte packets
+ 1  DESKTOP-DG28SNS.mshome.net (172.27.128.1)  0.171 ms  0.211 ms  0.200 ms
+ 2  192.168.0.1 (192.168.0.1)  0.910 ms  2.165 ms  1.505 ms
+ 3  192.168.4.1 (192.168.4.1)  3.375 ms  2.864 ms  3.677 ms
+ 4  192.168.1.1 (192.168.1.1)  2.851 ms  3.157 ms  3.471 ms
+ 5  100.64.0.1 (100.64.0.1)  54.226 ms  70.019 ms  70.013 ms
+ 6  172.16.250.54 (172.16.250.54)  53.967 ms *  69.019 ms
+ 7  * undefined.hostname.localhost (206.224.64.84)  2615.067 ms undefined.hostname.localhost (206.224.64.96)  3287.365 ms
+ 8  undefined.hostname.localhost (206.224.64.77)  31.261 ms undefined.hostname.localhost (206.224.64.89)  31.578 ms undefined.hostname.localhost (206.224.64.77)  31.875 ms
+ 9  142.250.171.128 (142.250.171.128)  31.563 ms 142.250.170.202 (142.250.170.202)  31.416 ms 142.250.171.128 (142.250.171.128)  31.856 ms
+10  * * *
+11  mia09s17-in-f4.1e100.net (172.217.1.100)  33.040 ms 142.251.60.8 (142.251.60.8)  31.484 ms mia09s17-in-f4.1e100.net (172.217.1.100)  31.668 ms

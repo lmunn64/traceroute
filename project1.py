@@ -17,27 +17,61 @@ def parse_latencies(ms_arr):
         return None
     return latency
 
+def parse_hosts(ms_arr):
+    hosts = []
+    query = []
+    for connection in ms_arr:
+        split_connection = connection.split(" ")
+        for split in split_connection:
+            try: 
+                # check if value is a float/int
+                q = float(split)
+            except ValueError:
+                if split != "*" and split != '':
+                    query.append(split)        
+        if len(query) > 0:
+            hosts.append(query)
+        query = []
+    if len(hosts) < 1:
+        return None
+    print(hosts)
+    return hosts
 
 # Parse each line of traceroute text into a dictionary output which records
 # network hop statistics including min, med, avg and max latencies for each hop
 def parse_text(runs_arr):
     # 2d array to hold all latency values of each hop from each run
-    hop_arr = {} 
+    hop_arr = [] 
     for run in runs_arr:
         for hop in run:
             ms_split = hop.split(' ms')
+            parse_hosts(ms_split)
             hop_split = hop.split()
-            print("Hop line: " + hop)
             hop_latencies = parse_latencies(ms_split)
-            hop_number = hop_split[0]
-            print("Hop: " + hop_number)
-            print(hop_latencies)
+            hop_number = int(hop_split[0])
             if hop_latencies is not None:
-                if len(hop_arr) >= int(hop_number):
-                    hop_arr[hop_number] += hop_latencies
+                if len(hop_arr) >= hop_number:
+                    hop_arr[hop_number-1] += hop_latencies
                 else:
-                    hop_arr[hop_number] = hop_latencies
-    print(hop_arr)
+                    hop_arr.append(hop_latencies)
+    output_dict = []
+    index = 1
+    for hops in hop_arr:
+        new_dict = {}
+        hops.sort()
+        # print(hops)
+        new_dict.update({'avg': round(sum(hops)/len(hops), 3)})
+        new_dict.update({'hop': index})
+        new_dict.update({'max': hops[-1]}) 
+        if len(hops) % 2 == 0:
+            med = round((hops[(len(hops) - 1) // 2] + hops[((len(hops) - 1) // 2) + 1]) / 2, 3)
+            new_dict.update({'med': med})
+        else:    
+            new_dict.update({'med': hops[(len(hops) - 1) // 2]})
+        new_dict.update({'min': hops[0]})
+        output_dict.append(new_dict)
+        index+=1
+    return output_dict
     # space_split = line.split()
     # hop_dict = {'hop' : space_split[0]}
     # latency.sort()
@@ -58,7 +92,7 @@ final_dictionary = []
 # If --test called, rip text files from directory
 if args.test is not None:
     directory = args.test[0]
-    print("Directory called once: " + directory)
+    # print("Directory called once: " + directory)
     runs_arr = []
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
@@ -72,9 +106,11 @@ if args.test is not None:
                     del output_arr[0]
                 if output_arr[-1] == '':
                     del output_arr[-1]
-                print(output_arr)
+                # print(output_arr)
                 runs_arr.append(output_arr)
-    parse_text(runs_arr)
+    runs_arr = parse_text(runs_arr)
+    with open(args.o[0], "w") as outfile:
+        outfile.write(json.dumps(runs_arr, indent=2))
 
 #Optional NUM_RUNS call
 else:
@@ -92,8 +128,7 @@ else:
         if output_arr[-1] == '':
             del output_arr[-1]
         runs_arr.append(output_arr)
-    print(runs_arr)
-    parse_text(runs_arr)
+    runs_arr = parse_text(runs_arr)
     with open(args.o[0], "w") as outfile:
         outfile.write(json.dumps(runs_arr, indent=2))
 # else:
