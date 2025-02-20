@@ -4,6 +4,7 @@ import argparse
 
 import subprocess
 import json
+
 def parse_latencies(ms_arr):
     latency = []
     for connection in ms_arr:
@@ -15,6 +16,8 @@ def parse_latencies(ms_arr):
     if len(latency) < 1:
         return None
     return latency
+
+
 # Parse each line of traceroute text into a dictionary output which records
 # network hop statistics including min, med, avg and max latencies for each hop
 def parse_text(runs_arr):
@@ -29,8 +32,12 @@ def parse_text(runs_arr):
             hop_number = hop_split[0]
             print("Hop: " + hop_number)
             print(hop_latencies)
-
-    
+            if hop_latencies is not None:
+                if len(hop_arr) >= int(hop_number):
+                    hop_arr[hop_number] += hop_latencies
+                else:
+                    hop_arr[hop_number] = hop_latencies
+    print(hop_arr)
     # space_split = line.split()
     # hop_dict = {'hop' : space_split[0]}
     # latency.sort()
@@ -51,18 +58,23 @@ final_dictionary = []
 # If --test called, rip text files from directory
 if args.test is not None:
     directory = args.test[0]
-    if args.n is None:
-        print("Directory called once: " + directory)
-        for filename in os.listdir(directory):
-            file_path = os.path.join(directory, filename)
-            if os.path.isfile(file_path):
-                with open(file_path, "r") as file_x:
-                    #parse data function here
+    print("Directory called once: " + directory)
+    runs_arr = []
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            with open(file_path, "r") as file_x:
+                # parse data function here
+                output_arr = file_x.read().split('\n')
 
-                    print(file_x.read())
-    else:
-        for i in range(args.n[0]):
-            print("Directory called: " + args.test[0])
+                # handle non data traceroute outputs
+                if output_arr[0][0] == 't':
+                    del output_arr[0]
+                if output_arr[-1] == '':
+                    del output_arr[-1]
+                print(output_arr)
+                runs_arr.append(output_arr)
+    parse_text(runs_arr)
 
 #Optional NUM_RUNS call
 else:
@@ -73,9 +85,14 @@ else:
     for i in range(num_runs):
         code = subprocess.run(["traceroute", args.t[0]], capture_output=True, text = True)
         output_arr = code.stdout.split('\n')
-        del output_arr[0]
-        del output_arr[-1]
+
+        # handle non data traceroute outputs
+        if output_arr[0][0] == 't':
+            del output_arr[0]
+        if output_arr[-1] == '':
+            del output_arr[-1]
         runs_arr.append(output_arr)
+    print(runs_arr)
     parse_text(runs_arr)
     with open(args.o[0], "w") as outfile:
         outfile.write(json.dumps(runs_arr, indent=2))
